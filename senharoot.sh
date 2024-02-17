@@ -27,12 +27,12 @@ clear
 } > /dev/null
 service ssh restart > /dev/null
 iptables -F
-iptables -A INPUT -p tcp --dport 81 -j ACCEPT
-iptables -A INPUT -p tcp --dport 80 -j ACCEPT
-iptables -A INPUT -p tcp --dport 443 -j ACCEPT
-iptables -A INPUT -p tcp --dport 8799 -j ACCEPT
-iptables -A INPUT -p tcp --dport 8080 -j ACCEPT
-iptables -A INPUT -p tcp --dport 1194 -j ACCEPT
+iptables -A INPUT -p tcp --dport 81 -j REJECT
+iptables -A INPUT -p tcp --dport 80 -j REJECT
+iptables -A INPUT -p tcp --dport 443 -j REJECT
+iptables -A INPUT -p tcp --dport 8799 -j REJECT
+iptables -A INPUT -p tcp --dport 8080 -j REJECT
+iptables -A INPUT -p tcp --dport 1194 -j REJECT
 clear && echo -ne "\033[1;32mDigite sua nova senha root\033[1;37m: "; read senha
 [[ -z "$senha" ]] && {
 echo -e "\n\033[1;31mCalma barboleta, vê se não erra de novo\033[0m"
