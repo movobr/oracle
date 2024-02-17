@@ -39,4 +39,4 @@ echo -e "\n\033[1;31mCalma barboleta, vê se não erra de novo\033[0m"
 exit 0
 }
 echo "root:$senha" | chpasswd
-echo -e "\n\033[1;31m[ \033[1;33mSucesso \033[1;31m]\033[1;37m - \033[1;32Root Ativado \033[0m"
+echo -e "\n\033[1;31m[ \033[1;33mSucesso \033[1;31m]\033[1;37m - \033[1;32mRoot Ativado \033[0m"
