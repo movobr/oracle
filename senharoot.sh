@@ -7,23 +7,64 @@ print_message() {
     echo -e "\033[${color}m${message}\033[0m"
 }
 
-# Verifica se o usuário é root
+# Passo 1: Muda para o usuário root (sudo -s)
 if [[ "$(id -u)" -ne 0 ]]; then
     print_message "1;31mErro:\033[0m Este script deve ser executado como root."
     exit 1
 fi
+print_message "1;32mPasso 1: Usuário root confirmado.\033[0m"
 
-# Faz backup do arquivo sshd_config
+# Passo 2: Volta ao diretório home (cd)
+cd
+print_message "1;32mPasso 2: Diretório home acessado.\033[0m"
+
+# Passo 3: Edita o arquivo /etc/ssh/sshd_config
+print_message "1;33mPasso 3: Atualizando o arquivo /etc/ssh/sshd_config...\033[0m"
+
+# Faz backup do arquivo original
 cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
-print_message "1;33mBackup do arquivo sshd_config criado em /etc/ssh/sshd_config.backup\033[0m"
+if [[ $? -ne 0 ]]; then
+    print_message "1;31mFalha ao criar backup do arquivo sshd_config.\033[0m"
+    exit 1
+fi
+print_message "1;32mBackup criado em /etc/ssh/sshd_config.backup\033[0m"
 
-# Atualiza o arquivo sshd_config
-sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
-sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
-sed -i '/^PasswordAuthentication no/d' /etc/ssh/sshd_config
-sed -i '/^#PasswordAuthentication no/d' /etc/ssh/sshd_config
+# Atualiza o arquivo sshd_config conforme especificado
+cat <<EOF > /etc/ssh/sshd_config
+#LoginGraceTime 2m
+ChallengeResponseAuthentication yes
+PermitRootLogin yes
+#StrictModes yes
+#MaxAuthTries 6
+#MaxSessions 10
 
-# Reinicia o serviço SSH
+# To disable tunneled clear text passwords, change to no here!
+PasswordAuthentication yes
+#PermitEmptyPasswords no
+EOF
+
+# Verifica se a sintaxe do arquivo sshd_config está correta
+sshd -t
+if [[ $? -ne 0 ]]; then
+    print_message "1;31mErro na sintaxe do arquivo /etc/ssh/sshd_config. Verifique o arquivo.\033[0m"
+    exit 1
+fi
+print_message "1;32mArquivo /etc/ssh/sshd_config atualizado com sucesso.\033[0m"
+
+# Passo 4: Define a senha do root
+print_message "1;33mPasso 4: Definindo a senha do root...\033[0m"
+while true; do
+    passwd root
+    if [[ $? -eq 0 ]]; then
+        print_message "1;32mSenha do root definida com sucesso!\033[0m"
+        break
+    else
+        print_message "1;31mFalha ao definir a senha. Tente novamente.\033[0m"
+    fi
+done
+
+# Passo 5: Reinicia o serviço SSH
+print_message "1;33mPasso 5: Reiniciando o serviço SSH...\033[0m"
 systemctl restart ssh
 if systemctl is-active --quiet ssh; then
     print_message "1;32mServiço SSH reiniciado com sucesso!\033[0m"
@@ -32,27 +73,5 @@ else
     exit 1
 fi
 
-# Configuração de firewall (permite portas 22, 80 e 443)
-iptables -F
-iptables -A INPUT -p tcp --dport 22 -j ACCEPT   # Permite SSH (porta 22)
-iptables -A INPUT -p tcp --dport 80 -j ACCEPT  # Permite HTTP (porta 80)
-iptables -A INPUT -p tcp --dport 443 -j ACCEPT # Permite HTTPS (porta 443)
-iptables -P INPUT DROP                         # Bloqueia todo o tráfego não permitido
-print_message "1;32mRegras de firewall configuradas: Portas 22, 80 e 443 habilitadas.\033[0m"
-
-# Define a nova senha do root
-while true; do
-    print_message "1;32mDigite sua nova senha root:\033[0m "
-    read -s senha
-    echo
-    if [[ -n "$senha" ]]; then
-        echo "root:$senha" | chpasswd
-        print_message "1;32mSenha do root alterada com sucesso!\033[0m"
-        break
-    else
-        print_message "1;31mA senha não pode estar vazia. Tente novamente.\033[0m"
-    fi
-done
-
 # Mensagem final
-print_message "1;32mConfiguração concluída! Agora você pode se conectar como root usando a senha definida.\033[0m"
+print_message "1;32mConfiguração concluída! Agora você pode acessar o servidor como root usando a senha definida.\033[0m"
