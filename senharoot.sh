@@ -34,8 +34,8 @@ if grep -q '^#\?LoginGraceTime' /etc/ssh/sshd_config; then
     # Remove o comentário (#) de LoginGraceTime, se necessário
     sed -i 's/^#\?LoginGraceTime.*/LoginGraceTime 2m/' /etc/ssh/sshd_config
 else
-    # Adiciona LoginGraceTime após a linha # Authentication:
-    sed -i '/^# Authentication:/a LoginGraceTime 2m' /etc/ssh/sshd_config
+    # Adiciona LoginGraceTime no início do arquivo
+    sed -i '1i LoginGraceTime 2m' /etc/ssh/sshd_config
 fi
 
 # Adiciona ou atualiza ChallengeResponseAuthentication
@@ -43,7 +43,7 @@ if grep -q '^#\?ChallengeResponseAuthentication' /etc/ssh/sshd_config; then
     # Remove o comentário (#) e define ChallengeResponseAuthentication como yes
     sed -i 's/^#\?ChallengeResponseAuthentication.*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
 else
-    # Adiciona ChallengeResponseAuthentication após a linha LoginGraceTime
+    # Adiciona ChallengeResponseAuthentication após LoginGraceTime
     sed -i '/^LoginGraceTime 2m/a ChallengeResponseAuthentication yes' /etc/ssh/sshd_config
 fi
 
@@ -51,7 +51,7 @@ if grep -q '^#\?PermitRootLogin' /etc/ssh/sshd_config; then
     # Remove o comentário (#) e define PermitRootLogin como yes
     sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
 else
-    # Adiciona PermitRootLogin após a linha ChallengeResponseAuthentication
+    # Adiciona PermitRootLogin após ChallengeResponseAuthentication
     sed -i '/^ChallengeResponseAuthentication yes/a PermitRootLogin yes' /etc/ssh/sshd_config
 fi
 
