@@ -38,8 +38,12 @@ else
     sed -i '/^# Authentication:/a LoginGraceTime 2m' /etc/ssh/sshd_config
 fi
 
-# Adiciona ChallengeResponseAuthentication yes após LoginGraceTime
-if ! grep -q '^ChallengeResponseAuthentication' /etc/ssh/sshd_config; then
+# Adiciona ou atualiza ChallengeResponseAuthentication
+if grep -q '^#\?ChallengeResponseAuthentication' /etc/ssh/sshd_config; then
+    # Remove o comentário (#) e define ChallengeResponseAuthentication como yes
+    sed -i 's/^#\?ChallengeResponseAuthentication.*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
+else
+    # Adiciona ChallengeResponseAuthentication após a linha LoginGraceTime
     sed -i '/^LoginGraceTime 2m/a ChallengeResponseAuthentication yes' /etc/ssh/sshd_config
 fi
 
