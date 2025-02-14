@@ -32,12 +32,13 @@ else
     exit 1
 fi
 
-# Configuração de firewall (permite apenas portas 80 e 443)
+# Configuração de firewall (permite portas 22, 80 e 443)
 iptables -F
-iptables -A INPUT -p tcp --dport 80 -j ACCEPT
-iptables -A INPUT -p tcp --dport 443 -j ACCEPT
-iptables -P INPUT DROP
-print_message "1;32mRegras de firewall configuradas: Portas 80 e 443 habilitadas.\033[0m"
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT   # Permite SSH (porta 22)
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT  # Permite HTTP (porta 80)
+iptables -A INPUT -p tcp --dport 443 -j ACCEPT # Permite HTTPS (porta 443)
+iptables -P INPUT DROP                         # Bloqueia todo o tráfego não permitido
+print_message "1;32mRegras de firewall configuradas: Portas 22, 80 e 443 habilitadas.\033[0m"
 
 # Define a nova senha do root
 while true; do
