@@ -29,19 +29,10 @@ if [[ $? -ne 0 ]]; then
 fi
 print_message "1;32mBackup criado em /etc/ssh/sshd_config.backup\033[0m"
 
-# Atualiza o arquivo sshd_config conforme especificado
-cat <<EOF > /etc/ssh/sshd_config
-#LoginGraceTime 2m
-ChallengeResponseAuthentication yes
-PermitRootLogin yes
-#StrictModes yes
-#MaxAuthTries 6
-#MaxSessions 10
-
-# To disable tunneled clear text passwords, change to no here!
-PasswordAuthentication yes
-#PermitEmptyPasswords no
-EOF
+# Atualiza apenas as diretivas relevantes usando sed
+sed -i 's/^#\?ChallengeResponseAuthentication.*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
+sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
 # Verifica se a sintaxe do arquivo sshd_config está correta
 sshd -t
