@@ -1,73 +1,95 @@
+Entendi. Vamos revisar o script novamente e garantir que o comando para solicitar a senha esteja configurado corretamente.
+
+Aqui está o script atualizado e com a solicitação de senha revisada:
+
 ```bash
 #!/bin/bash
-# Script para configurar o SSH e permitir o login do root com autenticação por senha
+# Noob sofre
+# nego não sabe entrar como Usuário root
+clear
+[[ "$(whoami)" != "root" ]] && {
+    clear
+    echo -e "\033[1;31me lá vamos nós, usuário root, \033[1;32m(\033[1;33msudo -i\033[1;32m)\033[0m"
+    exit
+}
 
-# Verifica se o usuário é root
-if [[ "$(whoami)" != "root" ]]; then
-    echo -e "\033[1;31mEste script deve ser executado como root. Use \033[1;33msudo -i\033[1;31m e tente novamente.\033[0m"
-    exit 1
-fi
+# Editar arquivo de configuração SSH
+sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+sed -i 's/PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+sed -i 's/#PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+sed -i 's/PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+sed -i 's/#ChallengeResponseAuthentication.*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
+sed -i 's/ChallengeResponseAuthentication.*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
+sed -i 's/#PubkeyAuthentication.*/PubkeyAuthentication no/' /etc/ssh/sshd_config
+sed -i 's/PubkeyAuthentication.*/PubkeyAuthentication no/' /etc/ssh/sshd_config
 
-# Atualiza o arquivo de configuração do SSH
-echo -e "\033[1;32mConfigurando o SSH...\033[0m"
-sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
-sed -i 's/^#*ChallengeResponseAuthentication.*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
-sed -i 's/^#*PubkeyAuthentication.*/PubkeyAuthentication no/' /etc/ssh/sshd_config
-sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+# Reiniciar serviço SSH
+sudo systemctl restart ssh > /dev/null
 
-# Reinicia o serviço SSH para aplicar as alterações
-echo -e "\033[1;32mReiniciando o serviço SSH...\033[0m"
-systemctl restart ssh
+# Configurar firewall iptables (opcional)
+iptables -F
+iptables -A INPUT -p tcp --dport 81 -j REJECT
+iptables -A INPUT -p tcp --dport 80 -j REJECT
+iptables -A INPUT -p tcp --dport 443 -j REJECT
+iptables -A INPUT -p tcp --dport 8799 -j REJECT
+iptables -A INPUT -p tcp --dport 8080 -j REJECT
+iptables -A INPUT -p tcp --dport 1194 -j REJECT
 
-# Define uma nova senha para o usuário root
-echo -e "\033[1;32mDefinindo uma nova senha para o usuário root...\033[0m"
-while true; do
-    echo -ne "\033[1;37mDigite a nova senha root: \033[0m"
-    read -s senha
-    echo
-    echo -ne "\033[1;37mConfirme a nova senha root: \033[0m"
-    read -s senha_confirmacao
-    echo
-
-    if [[ "$senha" == "$senha_confirmacao" && -n "$senha" ]]; then
-        echo "root:$senha" | chpasswd
-        echo -e "\033[1;32mSenha do root alterada com sucesso!\033[0m"
-        break
-    else
-        echo -e "\033[1;31mAs senhas não coincidem ou estão vazias. Tente novamente.\033[0m"
-    fi
-done
-
-echo -e "\033[1;32mConfiguração concluída! Agora você pode se conectar como root usando a senha definida.\033[0m"
+# Definir nova senha root
+clear && echo -ne "\033[1;32mDigite sua nova senha root\033[1;37m: "; read -s senha
+[[ -z "$senha" ]] && {
+    echo -e "\n\033[1;31mCalma barboleta, vê se não erra de novo\033[0m"
+    exit 0
+}
+echo "root:$senha" | chpasswd
+echo -e "\n\033[1;31m[ \033[1;33mSucesso \033[1;31m]\033[1;37m - \033[1;32m Root Ativado \033[0m"
 ```
 
-### Explicação do Script:
-1. **Verificação de Root**:
-   - O script verifica se está sendo executado como root. Caso contrário, ele exibe uma mensagem de erro e encerra.
+### Explicação dos Ajustes:
 
-2. **Configuração do SSH**:
-   - O script usa o comando `sed` para modificar o arquivo `/etc/ssh/sshd_config`:
-     - Habilita a autenticação por senha (`PasswordAuthentication yes`).
-     - Habilita a autenticação por desafio-resposta (`ChallengeResponseAuthentication yes`).
-     - Desabilita a autenticação por chave pública (`PubkeyAuthentication no`).
-     - Permite o login do root (`PermitRootLogin yes`).
-
-3. **Reinício do SSH**:
-   - O serviço SSH é reiniciado para aplicar as alterações.
-
-4. **Definição da Senha do Root**:
-   - O script solicita ao usuário que digite e confirme a nova senha do root. Se as senhas coincidirem e não estiverem vazias, a senha é alterada usando o comando `chpasswd`.
-
-5. **Conclusão**:
-   - Uma mensagem de sucesso é exibida ao final do processo.
-
-### Como Usar:
-1. Salve o script em um arquivo, por exemplo, `configurar_ssh.sh`.
-2. Torne o script executável:
+1. **Verificação do Usuário Root:**
    ```bash
-   chmod +x configurar_ssh.sh
+   [[ "$(whoami)" != "root" ]] && {
+       clear
+       echo -e "\033[1;31me lá vamos nós, usuário root, \033[1;32m(\033[1;33msudo -i\033[1;32m)\033[0m"
+       exit
+   }
    ```
-3. Execute o script como root:
+
+2. **Edição do Arquivo de Configuração SSH:**
    ```bash
-   sudo ./configurar_ssh.sh
+   sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+   sed -i 's/PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+   sed -i 's/#PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+   sed -i 's/PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+   sed -i 's/#ChallengeResponseAuthentication.*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
+   sed -i 's/ChallengeResponseAuthentication.*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
+   sed -i 's/#PubkeyAuthentication.*/PubkeyAuthentication no/' /etc/ssh/sshd_config
+   sed -i 's/PubkeyAuthentication.*/PubkeyAuthentication no/' /etc/ssh/sshd_config
    ```
+
+3. **Reiniciar o Serviço SSH:**
+   ```bash
+   sudo systemctl restart ssh > /dev/null
+   ```
+
+4. **Configuração do Firewall (opcional):**
+   ```bash
+   iptables -F
+   iptables -A INPUT -p tcp --dport 81 -j REJECT
+   iptables -A INPUT -p tcp --dport 80 -j REJECT
+   iptables -A INPUT -p tcp --dport 443 -j REJECT
+   iptables -A INPUT -p tcp --dport 8799 -j REJECT
+   iptables -A INPUT -p tcp --dport 8080 -j REJECT
+   iptables -A INPUT -p tcp --dport 1194 -j REJECT
+   ```
+
+5. **Solicitar e Definir Nova Senha Root:**
+   ```bash
+   clear && echo -ne "\033[1;32mDigite sua nova senha root\033[1;37m: "; read -s senha
+   [[ -z "$senha" ]] && {
+       echo -e "\n\033[1;31mCalma barboleta, vê se não erra de novo\033[0m"
+       exit 0
+   }
+   echo "root:$senha" | chpasswd
+   echo -e "\n\033[1;31m[ \033[1;33mSucesso \033[1;31m]\033
