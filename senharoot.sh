@@ -29,7 +29,10 @@ if [[ $? -ne 0 ]]; then
 fi
 print_message "1;32mBackup criado em /etc/ssh/sshd_config.backup\033[0m"
 
-# Adiciona ou atualiza as diretivas após o comentário "# Authentication:"
+# Remove as configurações duplicadas (caso existam)
+sed -i '/^# Authentication:/,/^#MaxSessions 10/d' /etc/ssh/sshd_config
+
+# Adiciona as configurações corretas após o comentário "# Authentication:"
 if grep -q '^# Authentication:' /etc/ssh/sshd_config; then
     # Adiciona as linhas desejadas após o comentário "# Authentication:"
     sed -i '/^# Authentication:/a \
