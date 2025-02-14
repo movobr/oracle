@@ -1,58 +1,42 @@
 #!/bin/bash
-
-# Função para exibir mensagens coloridas
-print_message() {
-    local color=$1
-    local message=$2
-    echo -e "\033[${color}m${message}\033[0m"
+# Noob sofre
+# nego não sabe entrar como Usuário root
+clear
+[[ "$(whoami)" != "root" ]] && {
+	clear
+	echo -e "\033[1;31me lá vamos nós, usuário root, \033[1;32m(\033[1;33msudo -i\033[1;32m)\033[0m"
+	exit
 }
-
-# Verifica se o usuário é root
-if [[ "$(id -u)" -ne 0 ]]; then
-    print_message "1;31mErro:\033[0m Este script deve ser executado como root."
-    exit 1
-fi
-
-# Faz backup do arquivo sshd_config
-cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
-print_message "1;33mBackup do arquivo sshd_config criado em /etc/ssh/sshd_config.backup\033[0m"
-
-# Atualiza o arquivo sshd_config
-sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
-sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
-sed -i '/^PasswordAuthentication no/d' /etc/ssh/sshd_config
-sed -i '/^#PasswordAuthentication no/d' /etc/ssh/sshd_config
-
-# Reinicia o serviço SSH
-systemctl restart ssh
-if systemctl is-active --quiet ssh; then
-    print_message "1;32mServiço SSH reiniciado com sucesso!\033[0m"
-else
-    print_message "1;31mFalha ao reiniciar o serviço SSH. Verifique os logs.\033[0m"
-    exit 1
-fi
-
-# Configuração de firewall (permite portas 22, 80 e 443)
+[[ $(grep -c "prohibit-password" /etc/ssh/sshd_config) != '0' ]] && {
+	sed -i "s/prohibit-password/yes/g" /etc/ssh/sshd_config
+} > /dev/null
+[[ $(grep -c "without-password" /etc/ssh/sshd_config) != '0' ]] && {
+	sed -i "s/without-password/yes/g" /etc/ssh/sshd_config
+} > /dev/null
+[[ $(grep -c "#PermitRootLogin" /etc/ssh/sshd_config) != '0' ]] && {
+	sed -i "s/#PermitRootLogin/PermitRootLogin/g" /etc/ssh/sshd_config
+} > /dev/null
+[[ $(grep -c "PasswordAuthentication" /etc/ssh/sshd_config) = '0' ]] && {
+	echo 'PasswordAuthentication yes' > /etc/ssh/sshd_config
+} > /dev/null
+[[ $(grep -c "PasswordAuthentication no" /etc/ssh/sshd_config) != '0' ]] && {
+	sed -i "s/PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+} > /dev/null
+[[ $(grep -c "#PasswordAuthentication no" /etc/ssh/sshd_config) != '0' ]] && {
+	sed -i "s/#PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+} > /dev/null
+service ssh restart > /dev/null
 iptables -F
-iptables -A INPUT -p tcp --dport 22 -j ACCEPT   # Permite SSH (porta 22)
-iptables -A INPUT -p tcp --dport 80 -j ACCEPT  # Permite HTTP (porta 80)
-iptables -A INPUT -p tcp --dport 443 -j ACCEPT # Permite HTTPS (porta 443)
-iptables -P INPUT DROP                         # Bloqueia todo o tráfego não permitido
-print_message "1;32mRegras de firewall configuradas: Portas 22, 80 e 443 habilitadas.\033[0m"
-
-# Define a nova senha do root
-while true; do
-    print_message "1;32mDigite sua nova senha root:\033[0m "
-    read -s senha
-    echo
-    if [[ -n "$senha" ]]; then
-        echo "root:$senha" | chpasswd
-        print_message "1;32mSenha do root alterada com sucesso!\033[0m"
-        break
-    else
-        print_message "1;31mA senha não pode estar vazia. Tente novamente.\033[0m"
-    fi
-done
-
-# Mensagem final
-print_message "1;32mConfiguração concluída! Agora você pode se conectar como root usando a senha definida.\033[0m"
+iptables -A INPUT -p tcp --dport 81 -j ACCEPT
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+iptables -A INPUT -p tcp --dport 8799 -j ACCEPT
+iptables -A INPUT -p tcp --dport 8080 -j ACCEPT
+iptables -A INPUT -p tcp --dport 1194 -j ACCEPT
+clear && echo -ne "\033[1;32mDigite sua nova senha root\033[1;37m: "; read senha
+[[ -z "$senha" ]] && {
+echo -e "\n\033[1;31mCalma barboleta, vê se não erra de novo\033[0m"
+exit 0
+}
+echo "root:$senha" | chpasswd
+echo -e "\n\033[1;31m[ \033[1;33mVai brasiliam \033[1;31m]\033[1;37m - \033[1;32magora o bicho vai pegar \033[0m"
