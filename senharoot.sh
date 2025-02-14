@@ -7,7 +7,7 @@ print_message() {
     echo -e "\033[${color}m${message}\033[0m"
 }
 
-# Passo 1: Muda para o usuário root (sudo -s)
+# Passo 1: Verifica se o script está sendo executado como root
 if [[ "$(id -u)" -ne 0 ]]; then
     print_message "1;31mErro:\033[0m Este script deve ser executado como root."
     exit 1
@@ -29,48 +29,20 @@ if [[ $? -ne 0 ]]; then
 fi
 print_message "1;32mBackup criado em /etc/ssh/sshd_config.backup\033[0m"
 
-# Atualiza ou adiciona as diretivas relevantes sem alterar a estrutura original
-if grep -q '^#\?LoginGraceTime' /etc/ssh/sshd_config; then
-    # Remove o comentário (#) de LoginGraceTime, se necessário
-    sed -i 's/^#\?LoginGraceTime.*/LoginGraceTime 2m/' /etc/ssh/sshd_config
+# Adiciona ou atualiza as diretivas após o comentário "# Authentication:"
+if grep -q '^# Authentication:' /etc/ssh/sshd_config; then
+    # Adiciona as linhas desejadas após o comentário "# Authentication:"
+    sed -i '/^# Authentication:/a \
+LoginGraceTime 2m\
+ChallengeResponseAuthentication yes\
+PermitRootLogin yes\
+#StrictModes yes\
+#MaxAuthTries 6\
+#MaxSessions 10' /etc/ssh/sshd_config
 else
-    # Adiciona LoginGraceTime no início do arquivo
-    sed -i '1i LoginGraceTime 2m' /etc/ssh/sshd_config
+    # Se o comentário "# Authentication:" não existir, adiciona manualmente
+    echo -e "# Authentication:\nLoginGraceTime 2m\nChallengeResponseAuthentication yes\nPermitRootLogin yes\n#StrictModes yes\n#MaxAuthTries 6\n#MaxSessions 10" >> /etc/ssh/sshd_config
 fi
-
-# Adiciona ou atualiza ChallengeResponseAuthentication
-if grep -q '^#\?ChallengeResponseAuthentication' /etc/ssh/sshd_config; then
-    # Remove o comentário (#) e define ChallengeResponseAuthentication como yes
-    sed -i 's/^#\?ChallengeResponseAuthentication.*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
-else
-    # Adiciona ChallengeResponseAuthentication após LoginGraceTime
-    sed -i '/^LoginGraceTime 2m/a ChallengeResponseAuthentication yes' /etc/ssh/sshd_config
-fi
-
-if grep -q '^#\?PermitRootLogin' /etc/ssh/sshd_config; then
-    # Remove o comentário (#) e define PermitRootLogin como yes
-    sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
-else
-    # Adiciona PermitRootLogin após ChallengeResponseAuthentication
-    sed -i '/^ChallengeResponseAuthentication yes/a PermitRootLogin yes' /etc/ssh/sshd_config
-fi
-
-# Mantém StrictModes, MaxAuthTries e MaxSessions comentados
-sed -i 's/^StrictModes.*/#StrictModes yes/' /etc/ssh/sshd_config
-sed -i 's/^MaxAuthTries.*/#MaxAuthTries 6/' /etc/ssh/sshd_config
-sed -i 's/^MaxSessions.*/#MaxSessions 10/' /etc/ssh/sshd_config
-
-# Atualiza PasswordAuthentication para remover o comentário (#)
-if grep -q '^#\?PasswordAuthentication' /etc/ssh/sshd_config; then
-    # Remove o comentário (#) e define PasswordAuthentication como yes
-    sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
-else
-    # Adiciona PasswordAuthentication após a linha # To disable tunneled clear text passwords
-    sed -i '/^# To disable tunneled clear text passwords/a PasswordAuthentication yes' /etc/ssh/sshd_config
-fi
-
-# Mantém PermitEmptyPasswords comentado
-sed -i 's/^PermitEmptyPasswords.*/#PermitEmptyPasswords no/' /etc/ssh/sshd_config
 
 # Verifica se a sintaxe do arquivo sshd_config está correta
 sshd -t
